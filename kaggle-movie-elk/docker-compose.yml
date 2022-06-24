@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  elasticsearch:
+    image: elasticsearch:7.10.1
+    container_name: elasticsearch_container
+    # build:
+    #   context: elasticsearch/
+    volumes:
+      - type: bind
+        source: ./elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      # JVM 의 Heap 메모리를 설정
+      ES_JAVA_OPTS: -Xmx256m -Xms256m
+  kibana:
+    image: kibana:7.10.1
+    container_name: kibana_container
+    # build:
+    #   context: kibana/
+    volumes:
+      - type: bind
+        source: ./kibana/config/kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+        read_only: true
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch  
+  logstash:
+    image: logstash:7.10.0
+    container_name: logstash_container
+    volumes:
+      - type: bind
+        source: ./logstash/config/logstash.yml
+        target: /usr/share/logstash/config/logstash.yml
+        read_only: true
+      - type: bind
+        source: ./logstash/config/pipelines.yml
+        target: /usr/share/logstash/config/pipelines.yml
+        read_only: true
+      - type: bind
+        source: ./logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: true
+    ports:
+      - "9600:9600"
+    environment:
+      # JVM 의 Heap 메모리를 설정
+      ES_JAVA_OPTS: -Xmx256m -Xms256m
+    depends_on:
+      - elasticsearch             
